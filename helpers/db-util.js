@@ -1,7 +1,8 @@
 import { MongoClient } from "mongodb";
 // Connection URL
-const url =
-  "mongodb+srv://api_user:xGDeobpcSsFlfcoj@cluster0.kuo5qqj.mongodb.net/?retryWrites=true&w=majority";
+const username = "api_user"; //move to env on prod
+const pass = "xGDeobpcSsFlfcoj"; //move to env on prod
+const url = `mongodb+srv://${username}:${pass}@cluster0.kuo5qqj.mongodb.net/?retryWrites=true&w=majority`;
 // Database Name
 const dbName = "events";
 
