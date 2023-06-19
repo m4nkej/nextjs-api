@@ -32,7 +32,7 @@ function hander(req, res) {
         text: "test text",
       },
     ];
-    res.status(200).json(dummyData);
+    res.status(200).json({ comments: dummyData });
   }
 }
 
