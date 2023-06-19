@@ -1,13 +1,20 @@
-import { MongoClient } from "mongodb";
+import {
+  connectDatabase,
+  insertDocument,
+  getAllDocuments,
+} from "../../../helpers/db-util";
+
 async function hander(req, res) {
   const eventId = req.query.eventId;
-  // Connection URL
-  const url =
-    "mongodb+srv://api_user:xGDeobpcSsFlfcoj@cluster0.kuo5qqj.mongodb.net/?retryWrites=true&w=majority";
-  const client = new MongoClient(url);
 
-  // Database Name
-  const dbName = "events";
+  let client;
+  try {
+    client = await connectDatabase();
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Connecting to DB failed!" });
+    return;
+  }
 
   if (req.method === "POST") {
     const { email, name, text } = req.body;
@@ -22,35 +29,43 @@ async function hander(req, res) {
     ) {
       console.log(email, name, text);
       res.status(422).json({ message: "Invalid data." });
+      client.close();
       return;
     }
-    const newComment = { email, name, text, eventId };
 
+    const newComment = {
+      email,
+      name,
+      text,
+      eventId,
+      date: new Date().toISOString(),
+    };
+
+    let result;
     try {
-      await client.connect();
-      const db = client.db(dbName);
-      const result = await db.collection("comments").insertOne(newComment);
-      newComment.id = result.insertedId;
+      result = await insertDocument(client, "comments", newComment);
+      newComment._id = result._id;
       res.status(201).json({ message: "Added", comment: newComment });
-    } finally {
-      await client.close();
+    } catch (error) {
+      res.status(500).json({ message: "Inserting comments failed!" });
     }
   }
+
   if (req.method === "GET") {
     try {
-      await client.connect();
-      const db = client.db(dbName);
-      const documents = await db
-        .collection("comments")
-        .find()
-        .sort({ _id: -1 })
-        .toArray();
-
+      const documents = await getAllDocuments(
+        client,
+        "comments",
+        { eventId: eventId },
+        { _id: -1 }
+      );
       res.status(200).json({ comments: documents });
-    } finally {
-      await client.close();
+    } catch (error) {
+      res.status(500).json({ message: "Getting comments failed!" });
     }
   }
+
+  client.close();
 }
 
 export default hander;
